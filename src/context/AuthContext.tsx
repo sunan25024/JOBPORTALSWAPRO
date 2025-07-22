@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -23,6 +24,7 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Check for stored user session
@@ -52,6 +54,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (rememberMe) {
         localStorage.setItem('swapro_user', JSON.stringify(mockUser));
       }
+      
+      // Redirect based on role
+      if (mockUser.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       throw new Error('Login failed');
     } finally {
@@ -76,6 +85,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(mockUser);
       localStorage.setItem('swapro_user', JSON.stringify(mockUser));
+      
+      // Redirect to applicant dashboard for Google login
+      navigate('/dashboard');
     } catch (error) {
       throw new Error('Google login failed');
     } finally {
@@ -99,6 +111,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(mockUser);
       localStorage.setItem('swapro_user', JSON.stringify(mockUser));
+      
+      // Redirect based on role
+      if (mockUser.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error) {
       throw new Error('Registration failed');
     } finally {
@@ -109,6 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem('swapro_user');
+    navigate('/');
   };
 
   return (

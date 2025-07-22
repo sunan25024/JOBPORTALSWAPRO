@@ -1,39 +1,68 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import About from './components/About';
-import Partners from './components/Partners';
-import LoginModal from './components/LoginModal';
-import Footer from './components/Footer';
+import LandingPage from './pages/LandingPage';
+import ApplicantDashboard from './pages/ApplicantDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import SplashScreen from './components/SplashScreen';
+import LoadingOverlay from './components/LoadingOverlay';
+import { useAuth } from './context/AuthContext';
 
-function App() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+const AppContent: React.FC = () => {
+  const { user, loading } = useAuth();
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) {
+    return <SplashScreen />;
+  }
+
+  if (loading) {
+    return <LoadingOverlay message="Memuat aplikasi..." />;
+  }
 
   return (
+    <>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            user && user.role === 'applicant' ? (
+              <ApplicantDashboard />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } 
+        />
+        <Route 
+          path="/admin" 
+          element={
+            user && user.role === 'admin' ? (
+              <AdminDashboard />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } 
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
+  );
+};
+
+function App() {
+  return (
     <AuthProvider>
-      <div className="min-h-screen bg-white">
-        <Header 
-          onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
-          isMenuOpen={isMenuOpen}
-          onLoginClick={() => setIsLoginModalOpen(true)}
-        />
-        
-        <main>
-          <Hero />
-          <About />
-          <Partners />
-        </main>
-        
-        <Footer />
-        
-        <LoginModal 
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
-        />
-      </div>
+      <AppContent />
     </AuthProvider>
   );
 }
