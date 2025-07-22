@@ -18,6 +18,7 @@ function App() {
         <Header 
           onMenuToggle={() => setIsMenuOpen(!isMenuOpen)}
           isMenuOpen={isMenuOpen}
+          onLoginClick={() => setIsLoginModalOpen(true)}
         />
         
         <main>

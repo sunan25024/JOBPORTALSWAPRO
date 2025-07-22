@@ -5,9 +5,10 @@ import { useAuth } from '../context/AuthContext';
 interface HeaderProps {
   onMenuToggle: () => void;
   isMenuOpen: boolean;
+  onLoginClick: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
+const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen, onLoginClick }) => {
   const { user, logout } = useAuth();
 
   return (
@@ -80,7 +81,10 @@ const Header: React.FC<HeaderProps> = ({ onMenuToggle, isMenuOpen }) => {
                 </button>
               </div>
             ) : (
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              <button 
+                onClick={onLoginClick}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
                 Masuk
               </button>
             )}
