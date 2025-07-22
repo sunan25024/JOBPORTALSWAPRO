@@ -6,34 +6,9 @@ const Hero: React.FC = () => {
   
   const slides = [
     {
-      image: 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080',
+      image: '/1709005097.jpg',
       title: 'Temukan Karir Impian Anda',
       subtitle: 'Bergabunglah dengan ribuan profesional yang telah menemukan pekerjaan terbaik melalui SWAPRO KARIR'
-    },
-    {
-      image: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080',
-      title: 'Peluang Karir Terbaik',
-      subtitle: 'Dapatkan akses ke lowongan kerja eksklusif dari perusahaan-perusahaan terpercaya'
-    },
-    {
-      image: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080',
-      title: 'Wujudkan Masa Depan Cerah',
-      subtitle: 'Mulai perjalanan karir Anda bersama kami dan raih kesuksesan yang Anda impikan'
-    },
-    {
-      image: 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080',
-      title: 'Bergabung dengan Tim Profesional',
-      subtitle: 'Temukan lingkungan kerja yang mendukung pengembangan karir dan potensi Anda'
-    },
-    {
-      image: 'https://images.pexels.com/photos/3184639/pexels-photo-3184639.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080',
-      title: 'Raih Kesempatan Emas',
-      subtitle: 'Jangan lewatkan peluang karir terbaik dari perusahaan-perusahaan ternama'
-    },
-    {
-      image: '/1709005097.jpg',
-      title: 'Temukan Peluang Baru',
-      subtitle: 'Jelajahi ribuan lowongan kerja yang sesuai dengan keahlian dan minat Anda'
     },
     {
       image: '/1709005114.jpg',
