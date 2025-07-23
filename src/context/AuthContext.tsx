@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { User } from '../types';
+import { toast } from 'react-hot-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -94,6 +95,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
+        if (error.message === 'Email not confirmed') {
+          throw new Error('Email belum dikonfirmasi. Silakan cek email Anda dan klik link konfirmasi yang dikirimkan.');
+        }
         throw new Error(error.message);
       }
 
@@ -148,6 +152,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         throw new Error(error.message);
+      }
+
+      // Jika user tidak langsung dikonfirmasi (email confirmation diaktifkan)
+      if (data.user && !data.user.email_confirmed_at) {
+        throw new Error('Akun berhasil dibuat! Silakan cek email Anda dan klik link konfirmasi untuk mengaktifkan akun.');
       }
 
       if (data.user) {
