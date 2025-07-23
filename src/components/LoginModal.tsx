@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Eye, EyeOff, Mail, Lock, User, Chrome } from 'lucide-react';
+import { X, Mail, Lock, User, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -9,229 +10,203 @@ interface LoginModalProps {
 
 const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
-    role: 'applicant' as 'applicant' | 'admin'
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [role, setRole] = useState<'applicant' | 'admin'>('applicant');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { login, loginWithGoogle, register, loading } = useAuth();
+  const { login, register } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     setError('');
 
     try {
-      if (isLogin) {
-        await login(formData.email, formData.password, rememberMe);
-      } else {
-        await register(formData.email, formData.password, formData.name, formData.role);
+      await login(email, password);
+      onClose();
+    } catch (error: any) {
+      const errorMessage = error.message || 'Login gagal';
+      setError(errorMessage);
+      
+      // Tampilkan toast untuk error email confirmation
+      if (errorMessage.includes('Email belum dikonfirmasi')) {
+        toast.error(errorMessage, {
+          duration: 6000,
+          position: 'top-center',
+        });
       }
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
     try {
-      await loginWithGoogle();
+      await register(email, password, name, role);
+      // Jangan tutup modal jika ada pesan tentang email confirmation
+      toast.success('Registrasi berhasil! Silakan cek email Anda untuk konfirmasi.', {
+        duration: 6000,
+        position: 'top-center',
+      });
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+    } catch (error: any) {
+      const errorMessage = error.message || 'Registrasi gagal';
+      setError(errorMessage);
+      
+      // Jika ini adalah pesan tentang email confirmation, tampilkan sebagai info
+      if (errorMessage.includes('Silakan cek email Anda')) {
+        toast.success(errorMessage, {
+          duration: 8000,
+          position: 'top-center',
+        });
+        onClose(); // Tutup modal karena registrasi berhasil
+      } else {
+        toast.error(errorMessage, {
+          duration: 4000,
+          position: 'top-center',
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+        <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">
-            {isLogin ? 'Masuk' : 'Daftar Akun'}
+            {isLogin ? 'Login' : 'Register'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-500 hover:text-gray-700"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
-          {/* Google Login */}
-          <button
-            onClick={handleGoogleLogin}
-            disabled={loading}
-            className="w-full flex items-center justify-center space-x-3 bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors mb-4 disabled:opacity-50"
-          >
-            <Chrome className="w-5 h-5" />
-            <span>{isLogin ? 'Masuk' : 'Daftar'} dengan Google</span>
-          </button>
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">atau</span>
-            </div>
-            {!isLogin && (
-              <p className="text-xs text-gray-500 mt-1">
-                Password minimal 6 karakter
-              </p>
-            )}
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            {!isLogin && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nama Lengkap
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Masukkan nama lengkap"
-                      required
-                    />
-                  </div>
+        <form onSubmit={isLogin ? handleLogin : handleRegister} className="space-y-4">
+          {!isLogin && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nama Lengkap
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Masukkan nama lengkap"
+                    required
+                  />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Daftar Sebagai
-                  </label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
+                </label>
+                <div className="relative">
+                  <UserCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <select
-                    name="role"
-                    value={formData.role}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as 'applicant' | 'admin')}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="applicant">Pelamar</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
-              </>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Masukkan email"
-                  required
-                />
               </div>
-            </div>
+            </>
+          )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  minLength={6}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Masukkan password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Masukkan email"
+                required
+              />
             </div>
+          </div>
 
-            {isLogin && (
-              <div className="flex items-center justify-between">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-sm text-gray-600">Ingat saya</span>
-                </label>
-                <button
-                  type="button"
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  Lupa password?
-                </button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Masukkan password"
+                required
+                minLength={6}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {error && (
+              <div className={`text-sm text-center ${
+                error.includes('Silakan cek email Anda') 
+                  ? 'text-blue-600 bg-blue-50 p-3 rounded-lg' 
+                  : 'text-red-500'
+              }`}>
+                {error}
               </div>
             )}
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              disabled={isLoading}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Memproses...' : (isLogin ? 'Masuk' : 'Daftar')}
+              {isLoading ? 'Loading...' : (isLogin ? 'Login' : 'Register')}
             </button>
-          </form>
+          </div>
+        </form>
 
-          {/* Switch Mode */}
-          <div className="mt-6 text-center">
-            <span className="text-gray-600">
-              {isLogin ? 'Belum punya akun?' : 'Sudah punya akun?'}
-            </span>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            {isLogin ? 'Belum punya akun?' : 'Sudah punya akun?'}
             <button
               onClick={() => {
                 setIsLogin(!isLogin);
                 setError('');
-                setFormData({ email: '', password: '', name: '', role: 'applicant' });
+                setEmail('');
+                setPassword('');
+                setName('');
+                setRole('applicant');
               }}
-              className="ml-2 text-blue-600 hover:text-blue-800 font-medium"
+              className="ml-1 text-blue-600 hover:text-blue-800 font-medium"
             >
-              {isLogin ? 'Daftar sekarang' : 'Masuk di sini'}
+              {isLogin ? 'Register' : 'Login'}
             </button>
-          </div>
+          </p>
         </div>
       </div>
     </div>
