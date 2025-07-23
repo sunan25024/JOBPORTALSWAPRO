@@ -81,7 +81,6 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           >
             <Chrome className="w-5 h-5" />
             <span>{isLogin ? 'Masuk' : 'Daftar'} dengan Google</span>
-                minLength={6}
           </button>
 
           {/* Divider */}
@@ -173,6 +172,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
+                  minLength={6}
                   className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Masukkan password"
                   required
