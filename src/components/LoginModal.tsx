@@ -17,7 +17,20 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const { login, register } = useAuth();
+  const { login, register, resendConfirmationEmail } = useAuth();
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      toast.error('Silakan masukkan email terlebih dahulu');
+      return;
+    }
+
+    try {
+      await resendConfirmationEmail(email);
+    } catch (error) {
+      // Error sudah ditangani di dalam fungsi resendConfirmationEmail
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,12 +184,23 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
           <div className="space-y-4">
             {error && (
-              <div className={`text-sm text-center ${
+              <div className={`text-sm ${
                 error.includes('Silakan cek email Anda') 
                   ? 'text-blue-600 bg-blue-50 p-3 rounded-lg' 
                   : 'text-red-500'
               }`}>
-                {error}
+                <div className="text-center mb-2">{error}</div>
+                {error.includes('Email belum dikonfirmasi') && (
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={handleResendConfirmation}
+                      className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
+                    >
+                      Kirim Ulang Email Konfirmasi
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

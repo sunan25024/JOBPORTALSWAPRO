@@ -10,6 +10,7 @@ interface AuthContextType {
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   register: (email: string, password: string, name: string, role: 'applicant' | 'admin') => Promise<void>;
+  resendConfirmationEmail: (email: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -171,6 +172,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resendConfirmationEmail = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast.success('Email konfirmasi telah dikirim ulang. Silakan cek email Anda.', {
+        duration: 6000,
+        position: 'top-center',
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || 'Gagal mengirim ulang email konfirmasi';
+      toast.error(errorMessage, {
+        duration: 4000,
+        position: 'top-center',
+      });
+      throw error;
+    }
+  };
+
   const logout = async () => {
     setLoading(true);
     try {
@@ -200,6 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       login,
       loginWithGoogle,
       register,
+      resendConfirmationEmail,
       logout,
       loading
     }}>
