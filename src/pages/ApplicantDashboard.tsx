@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, MapPin, Briefcase, Clock, DollarSign, Building, Star, Filter, User, LogOut, Send, Heart, CheckCircle, XCircle } from 'lucide-react';
+import { Search, MapPin, Briefcase, Clock, DollarSign, Building, Star, Filter, User, LogOut, Send, Heart, CheckCircle, XCircle, MessageCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ApplicantBottomNav from '../components/ApplicantBottomNav';
 
