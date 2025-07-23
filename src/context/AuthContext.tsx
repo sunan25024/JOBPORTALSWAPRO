@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { User } from '../types';
 
 interface AuthContextType {
@@ -26,43 +28,85 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Convert Supabase user to our User type
+  const convertSupabaseUser = (supabaseUser: SupabaseUser, additionalData?: any): User => {
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || '',
+      name: additionalData?.name || supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+      role: additionalData?.role || (supabaseUser.email?.includes('admin') ? 'admin' : 'applicant'),
+      avatar: supabaseUser.user_metadata?.avatar_url || additionalData?.avatar,
+      createdAt: new Date(supabaseUser.created_at),
+      emailConfirmed: supabaseUser.email_confirmed_at !== null
+    };
+  };
+
   useEffect(() => {
-    // Check for stored user session
-    const storedUser = localStorage.getItem('swapro_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
+    // Get initial session
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const convertedUser = convertSupabaseUser(session.user);
+        setUser(convertedUser);
+      }
+      setLoading(false);
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          const convertedUser = convertSupabaseUser(session.user);
+          setUser(convertedUser);
+          
+          // Store user data in localStorage for persistence
+          localStorage.setItem('swapro_user', JSON.stringify(convertedUser));
+          
+          // Redirect based on role
+          if (event === 'SIGNED_IN') {
+            if (convertedUser.role === 'admin') {
+              navigate('/admin');
+            } else {
+              navigate('/dashboard');
+            }
+          }
+        } else {
+          setUser(null);
+          localStorage.removeItem('swapro_user');
+        }
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const login = async (email: string, password: string, rememberMe = false) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockUser: User = {
-        id: '1',
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        name: email.split('@')[0],
-        role: email.includes('admin') ? 'admin' : 'applicant',
-        createdAt: new Date(),
-      };
+        password
+      });
 
-      setUser(mockUser);
-      
-      if (rememberMe) {
-        localStorage.setItem('swapro_user', JSON.stringify(mockUser));
+      if (error) {
+        throw new Error(error.message);
       }
-      
-      // Redirect based on role
-      if (mockUser.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
+
+      if (data.user) {
+        const convertedUser = convertSupabaseUser(data.user);
+        setUser(convertedUser);
+        
+        if (rememberMe) {
+          localStorage.setItem('swapro_user', JSON.stringify(convertedUser));
+        }
       }
     } catch (error) {
-      throw new Error('Login failed');
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -71,25 +115,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginWithGoogle = async () => {
     setLoading(true);
     try {
-      // Simulate Google OAuth
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockUser: User = {
-        id: '1',
-        email: 'user@gmail.com',
-        name: 'Google User',
-        role: 'applicant',
-        avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150',
-        createdAt: new Date(),
-      };
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
 
-      setUser(mockUser);
-      localStorage.setItem('swapro_user', JSON.stringify(mockUser));
-      
-      // Redirect to applicant dashboard for Google login
-      navigate('/dashboard');
+      if (error) {
+        throw new Error(error.message);
+      }
     } catch (error) {
-      throw new Error('Google login failed');
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -98,25 +135,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, name: string, role: 'applicant' | 'admin') => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockUser: User = {
-        id: Date.now().toString(),
+      const { data, error } = await supabase.auth.signUp({
         email,
-        name,
-        role,
-        createdAt: new Date(),
-      };
+        password,
+        options: {
+          data: {
+            name,
+            role
+          }
+        }
+      });
 
-      setUser(mockUser);
-      localStorage.setItem('swapro_user', JSON.stringify(mockUser));
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data.user) {
+        const convertedUser = convertSupabaseUser(data.user, { name, role });
+        setUser(convertedUser);
+        localStorage.setItem('swapro_user', JSON.stringify(convertedUser));
+      }
+    } catch (error) {
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signOut();
       
-      // Redirect based on role
-      if (mockUser.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      setUser(null);
+      localStorage.removeItem('swapro_user');
+      navigate('/');
+    } catch (error) {
+      // Even if there's an error, clear local state
+      setUser(null);
+      localStorage.removeItem('swapro_user');
+      navigate('/');
+      console.error('Logout error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      login,
+      loginWithGoogle,
+      register,
+      logout,
+      loading
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
       }
     } catch (error) {
       throw new Error('Registration failed');

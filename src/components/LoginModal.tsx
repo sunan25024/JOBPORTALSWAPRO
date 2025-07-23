@@ -81,6 +81,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
           >
             <Chrome className="w-5 h-5" />
             <span>{isLogin ? 'Masuk' : 'Daftar'} dengan Google</span>
+                minLength={6}
           </button>
 
           {/* Divider */}
@@ -91,6 +92,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-white text-gray-500">atau</span>
             </div>
+            {!isLogin && (
+              <p className="text-xs text-gray-500 mt-1">
+                Password minimal 6 karakter
+              </p>
+            )}
           </div>
 
           {/* Form */}

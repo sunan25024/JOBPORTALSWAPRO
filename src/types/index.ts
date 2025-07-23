@@ -2,9 +2,10 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'applicant' | 'admin';
+  role?: 'applicant' | 'admin';
   avatar?: string;
   createdAt: Date;
+  emailConfirmed?: boolean;
 }
 
 export interface Job {
