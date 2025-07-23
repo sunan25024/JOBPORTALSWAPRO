@@ -198,30 +198,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
-      }
-    } catch (error) {
-      throw new Error('Registration failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('swapro_user');
-    navigate('/');
-  };
-
-  return (
-    <AuthContext.Provider value={{
-      user,
-      login,
-      loginWithGoogle,
-      register,
-      logout,
-      loading
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
